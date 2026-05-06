@@ -24,9 +24,9 @@ EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 POSITIONS = {
-    "Kitchen": "documents/kitchen",
-    "Cafe": "documents/cafe",
-    "Warehouse": "documents/warehouse",
+    "Kitchen": "documents/Kitchen",
+    "Cafe": "documents/Cafe",
+    "Warehouse": "documents/Warehouse",
 }
 
 CV_PROFILE = """
