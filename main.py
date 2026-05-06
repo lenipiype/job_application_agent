@@ -21,7 +21,6 @@ load_dotenv()
 BOT_TOKEN = os.environ["TELEGRAM_TOKEN"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 EMAIL_ADDRESS = os.environ["EMAIL_ADDRESS"]
-EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -127,9 +126,12 @@ def send_application(to_email, subject, body, files):
                 subtype="pdf",
                 filename=file_path.name,
             )
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    
+    with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+        smtp.starttls()
+        smtp.login(os.environ["SMTP_LOGIN"], os.environ["SMTP_PASSWORD"])
         smtp.send_message(msg)
 
 
@@ -200,16 +202,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if step == "approval":
         if text == "APPROVE":
-            draft = context.user_data["draft"]
-            to_email = context.user_data["recipient_email"]
-            files = [Path(f) for f in context.user_data["files"]]
-
-            subject, body = parse_subject_email(draft)
-            send_application(to_email, subject, body, files)
-
-            context.user_data.clear()
-            await update.message.reply_text("Application sent successfully. Back to start: send /start.")
-            return
+            try:
+                draft = context.user_data["draft"]
+                to_email = context.user_data["recipient_email"]
+                files = [Path(f) for f in context.user_data["files"]]
+        
+                subject, body = parse_subject_email(draft)
+                send_application(to_email, subject, body, files)
+        
+                context.user_data.clear()
+                await update.message.reply_text("Application sent successfully. Back to start: send /start.")
+                return
+        
+            except Exception as e:
+                await update.message.reply_text(f"Sending failed: {e}")
+                print("Sending failed:", e)
+                return
 
         if text == "CANCEL":
             context.user_data.clear()
