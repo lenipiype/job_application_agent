@@ -84,10 +84,19 @@ SUBJECT:
 ...
 
 EMAIL:
-...
+Write a short German application email only.
+Maximum 120 words.
+Mention only:
+- relevant experience
+- skills
+- availability
+- German A2 and fluent English
+Do NOT mention attachment file names.
+Do NOT write a long cover letter.
+Do NOT include English translation.
 
 COVER_LETTER:
-...
+Do not write a separate cover letter. Write: Not needed.
 """
 
     response = client.chat.completions.create(
@@ -102,12 +111,16 @@ def parse_subject_email(draft):
     subject = "Bewerbung um eine Teilzeitstelle"
     body = draft
 
-    if "SUBJECT:" in draft and "EMAIL:" in draft:
+    if "SUBJECT:" in draft:
         subject = draft.split("SUBJECT:", 1)[1].split("EMAIL:", 1)[0].strip()
+
+    if "EMAIL:" in draft:
         body = draft.split("EMAIL:", 1)[1]
 
         if "COVER_LETTER:" in body:
-            body = body.split("COVER_LETTER:", 1)[0].strip()
+            body = body.split("COVER_LETTER:", 1)[0]
+
+        body = body.strip()
 
     return subject, body
 
