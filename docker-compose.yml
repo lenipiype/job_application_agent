@@ -1,0 +1,9 @@
+services:
+  job-agent:
+    build: .
+    container_name: job-application-agent
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./documents:/app/documents
