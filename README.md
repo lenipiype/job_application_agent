@@ -49,7 +49,8 @@ The bot generates professional German job application emails using OpenAI, attac
 - OpenAI API
 - Brevo SMTP
 - Flask
-- Railway
+- Docker
+- Railway changed to Oracle Cloud(update)
 - dotenv
 
 ---
