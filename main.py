@@ -1,5 +1,6 @@
 import os
 import smtplib
+import logging
 import threading
 import asyncio
 from flask import Flask
@@ -16,6 +17,11 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
 
 load_dotenv()
 
@@ -253,9 +259,16 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Bot is running...")
-    app.run_polling(drop_pending_updates=True)
+
+    app.run_polling(
+        drop_pending_updates=True,
+        allowed_updates=Update.ALL_TYPES,
+    )
 
 
 if __name__ == "__main__":
-    threading.Thread(target=run_web, daemon=True).start()
+    web_thread = threading.Thread(target=run_web)
+    web_thread.daemon = True
+    web_thread.start()
+
     main()
