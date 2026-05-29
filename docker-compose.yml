@@ -1,9 +1,13 @@
 services:
   job-agent:
     build: .
+    image: ghcr.io/lenipiype/job-application-agent:latest
     container_name: job-application-agent
     restart: unless-stopped
+    ports:
+      - "10000:10000"
     env_file:
       - .env
     volumes:
       - ./documents:/app/documents
+      - ./data:/app/data
