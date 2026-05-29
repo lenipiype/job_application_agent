@@ -1,10 +1,9 @@
 import logging
+import os
 import smtplib
 import time
 from email.message import EmailMessage
 from pathlib import Path
-
-from src.config import EMAIL_ADDRESS, SMTP_LOGIN, SMTP_PASSWORD, SMTP_PORT, SMTP_SERVER
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +33,22 @@ def send_email_with_retry(
     attachments: list[Path]
 ) -> None:
     """Send an email via SMTP with attachments. Retries up to 3 times with exponential backoff."""
-    if not EMAIL_ADDRESS or not SMTP_LOGIN or not SMTP_PASSWORD:
+    sender_email = os.getenv("EMAIL_ADDRESS")
+    smtp_login = os.getenv("SMTP_LOGIN")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_server = os.getenv("SMTP_SERVER", "smtp-relay.brevo.com")
+
+    try:
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    except (TypeError, ValueError):
+        smtp_port = 587
+
+    if not sender_email or not smtp_login or not smtp_password:
         raise ValueError("Missing email SMTP credentials in environment variables.")
 
     # Create the email message
     msg = EmailMessage()
-    msg["From"] = EMAIL_ADDRESS
+    msg["From"] = sender_email
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(body)
@@ -76,9 +85,9 @@ def send_email_with_retry(
                 f"(Attempt {attempt}/{max_attempts})..."
             )
 
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30) as smtp:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as smtp:
                 smtp.starttls()
-                smtp.login(SMTP_LOGIN, SMTP_PASSWORD)
+                smtp.login(smtp_login, smtp_password)
                 smtp.send_message(msg)
 
             logger.info(f"Email sent successfully to {to_email} on attempt {attempt}.")
