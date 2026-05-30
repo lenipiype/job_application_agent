@@ -74,8 +74,8 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}:latest
             
             # Restart container mounting persistent documents and local data directories
-            docker stop job-agent || true
-            docker rm job-agent || true
+            docker stop job-application-agent || true
+            docker rm job-application-agent || true
             
             docker run -d \
               --name job-agent \
