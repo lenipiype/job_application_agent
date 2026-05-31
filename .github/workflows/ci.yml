@@ -71,10 +71,17 @@ jobs:
           username: ${{ secrets.ORACLE_SSH_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
+            echo "📁 Pre-creating host directories with correct ownership..."
+            mkdir -p /home/${{ secrets.ORACLE_SSH_USER }}/data
+            mkdir -p /home/${{ secrets.ORACLE_SSH_USER }}/documents/Kitchen
+            mkdir -p /home/${{ secrets.ORACLE_SSH_USER }}/documents/Cafe
+            mkdir -p /home/${{ secrets.ORACLE_SSH_USER }}/documents/Warehouse
+            
+            # Ensure the database data folder is fully writable by the container's non-root user (UID 10001)
+            chmod 777 /home/${{ secrets.ORACLE_SSH_USER }}/data
   
             echo "📦 Creating .env file on server..."
-  
-            cat > /home/ubuntu/.env <<EOF
+            cat > /home/${{ secrets.ORACLE_SSH_USER }}/.env <<EOF
             TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
   
@@ -100,7 +107,7 @@ jobs:
               --name job-agent \
               --restart unless-stopped \
               -p 10000:10000 \
-              -v /home/ubuntu/data:/app/data \
-              -v /home/ubuntu/documents:/app/documents \
-              --env-file /home/ubuntu/.env \
+              -v /home/${{ secrets.ORACLE_SSH_USER }}/data:/app/data \
+              -v /home/${{ secrets.ORACLE_SSH_USER }}/documents:/app/documents \
+              --env-file /home/${{ secrets.ORACLE_SSH_USER }}/.env \
               ghcr.io/${{ github.repository }}:latest
