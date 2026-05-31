@@ -62,26 +62,45 @@ jobs:
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+  
     steps:
-      - name: Deploy to Oracle Cloud VM via SSH
+      - name: Deploy to Oracle VM via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.ORACLE_SSH_HOST }}
           username: ${{ secrets.ORACLE_SSH_USER }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
-            # Pull latest Docker image
+  
+            echo "📦 Creating .env file on server..."
+  
+            cat > /home/ubuntu/.env <<EOF
+            TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+  
+            EMAIL_ADDRESS=${{ secrets.EMAIL_ADDRESS }}
+            SMTP_LOGIN=${{ secrets.SMTP_LOGIN }}
+            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+  
+            ALLOWED_USER_IDS=${{ secrets.ALLOWED_USER_IDS }}
+  
+            DB_PATH=/app/data/applications.db
+            PORT=10000
+            EOF
+  
+            echo "🔄 Pulling latest Docker image..."
             docker pull ghcr.io/${{ github.repository }}:latest
-            
-            # Restart container mounting persistent documents and local data directories
-            docker stop job-application-agent || true
-            docker rm job-application-agent || true
-            
+  
+            echo "🛑 Stopping old container..."
+            docker stop job-agent || true
+            docker rm job-agent || true
+  
+            echo "🚀 Starting new container..."
             docker run -d \
               --name job-agent \
               --restart unless-stopped \
               -p 10000:10000 \
-              -v /home/${{ secrets.ORACLE_SSH_USER }}/documents:/app/documents \
-              -v /home/${{ secrets.ORACLE_SSH_USER }}/data:/app/data \
-              --env-file /home/${{ secrets.ORACLE_SSH_USER }}/.env \
+              -v /home/ubuntu/data:/app/data \
+              -v /home/ubuntu/documents:/app/documents \
+              --env-file /home/ubuntu/.env \
               ghcr.io/${{ github.repository }}:latest
